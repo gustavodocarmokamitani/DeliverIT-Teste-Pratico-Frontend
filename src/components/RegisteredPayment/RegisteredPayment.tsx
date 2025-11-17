@@ -1,26 +1,14 @@
-import { useState, useEffect } from "react";
-
 import { CardComponent } from "../../styles/common/Card";
 import { HeaderComponent } from "../../styles/common/Header";
 import * as S from "./RegisteredPayment.styles";
-import { paymentService } from "../../services/paymentService";
 import type { Account } from "../../model/Payment";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 
-const RegisteredPayment = () => {
-  const [payment, setPayment] = useState<Account[]>([]);
+interface RegisteredPaymentProps {
+  payment: Account[];
+}
 
-  useEffect(() => {
-    async function loadContas() {
-      try {
-        const data = await paymentService.getAllAccounts();
-        setPayment(data);
-      } catch (error) {
-        console.error("Erro ao buscar contas:", error);
-      }
-    }
-    loadContas();
-  }, []);
+const RegisteredPayment: React.FC<RegisteredPaymentProps> = ({ payment }) => {
 
   function getStatusColor(dias: number): { background: string } {
     if (dias === 0) {
@@ -42,7 +30,7 @@ const RegisteredPayment = () => {
         <p>{payment.length} conta cadastrada</p>
       </HeaderComponent>
 
-      {payment.map((p) => {
+      {payment.slice().reverse().map((p) => {
         const statusColors = getStatusColor(p.diasEmAtraso);
         return (
           <CardComponent key={p.id}>
@@ -54,7 +42,7 @@ const RegisteredPayment = () => {
               }}
             >
               <div>
-                <h4 style={{ fontWeight: "600" }}>Nome da Conta</h4>
+                <h4 style={{ fontWeight: "600" }}>{p.nome}</h4>
                 <p style={{ fontSize: ".8rem", color: "#6c7c9a" }}>
                   Pagamento em {formatDate(p.dataPagamento)}
                 </p>

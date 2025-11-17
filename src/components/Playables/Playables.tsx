@@ -8,12 +8,16 @@ import * as S from "./Playables.styles";
 
 const initialFormState: CreateAccountPayload = {
   nome: "",
-  valorOriginal: 0,
+  valorOriginal: "",
   dataVencimento: "",
   dataPagamento: "",
 };
 
-const Playables = () => {
+interface PlayablesProps {
+    onAccountAdded: () => void;
+}
+
+const Playables:React.FC<PlayablesProps> = ({onAccountAdded}) => {
   const [formData, setFormData] =
     useState<CreateAccountPayload>(initialFormState);
 
@@ -23,13 +27,22 @@ const Playables = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]:
-        name === "valorOriginal"
-          ? parseFloat(value.replace(",", ".")) || 0
-          : value,
-    }));
+
+    if (name === "valorOriginal") {
+      // 🔑 Apenas salva a string, permitindo formatação (ex: 123,45)
+      // Remove R$ e pontos de milhar, permitindo apenas dígitos e vírgula
+      let cleanedValue = value.replace(/[^0-9,]/g, "");
+
+      setFormData((prev) => ({
+        ...prev,
+        [name]: cleanedValue, // Salva a string limpa
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,9 +52,12 @@ const Playables = () => {
     setErrorMessage(null);
 
     try {
+      const valorOriginalNum =
+        parseFloat(formData.valorOriginal.replace(",", ".")) || 0;
+
       if (
         !formData.nome ||
-        formData.valorOriginal <= 0 ||
+        valorOriginalNum <= 0 ||
         !formData.dataPagamento ||
         !formData.dataVencimento
       ) {
@@ -52,13 +68,18 @@ const Playables = () => {
         return;
       }
 
-      await paymentService.createAccount(formData);
+      const payload: CreateAccountPayload = {
+        nome: formData.nome,
+        valorOriginal: String(valorOriginalNum),
+        dataVencimento: formData.dataVencimento,
+        dataPagamento: formData.dataPagamento,
+      };
 
-      setSuccessMessage(
-        `Conta adicionar com sucesso."
-        }`
-      );
+      await paymentService.createAccount(payload);
+
+      setSuccessMessage(`Conta adicionar com sucesso.`);
       setFormData(initialFormState);
+      onAccountAdded();
     } catch (error) {
       let userMessage = "Erro desconhecido ao processar a conta.";
 
@@ -113,10 +134,10 @@ const Playables = () => {
       </HeaderComponent>
 
       {successMessage && (
-        <p style={{ textAlign: "center", color: "green" }}>{successMessage}</p>
+        <p style={{ textAlign: "center", color: "green", background: "#f8fafc", borderRadius: "15px", padding: ".5rem 1rem" }}>{successMessage}</p>
       )}
       {errorMessage && (
-        <p style={{ textAlign: "center", color: "red" }}>{errorMessage}</p>
+        <p style={{ textAlign: "center", color: "red", background: "#f8fafc", borderRadius: "15px", padding: ".5rem 1rem" }}>{errorMessage}</p>
       )}
 
       <Input
@@ -130,7 +151,7 @@ const Playables = () => {
 
       <Input
         type="text"
-        placeholder="0.00"
+        placeholder="0,00"
         label="Valor Original (R$)"
         name="valorOriginal"
         value={formData.valorOriginal || ""}

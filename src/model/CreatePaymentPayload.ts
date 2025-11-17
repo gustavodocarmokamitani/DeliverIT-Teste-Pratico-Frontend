@@ -1,6 +1,6 @@
 export interface CreateAccountPayload {
   nome: string;
-  valorOriginal: number;
+  valorOriginal: string;
   dataVencimento: string; 
   dataPagamento: string;
 }
